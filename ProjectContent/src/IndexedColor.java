@@ -96,7 +96,7 @@ public class IndexedColor {
         int[][] indexTable = new int[h][w];
 
 //        popularity(arrayOrigin, colorTable, indexTable, w, h, colorNum);
-        partitioning(colorNum, arrayOrigin);
+        partitioning(colorNum, arrayOrigin, colorTable, indexTable, h, w);
 
 
     }
@@ -163,6 +163,10 @@ public class IndexedColor {
 
     public static void popularity(int[][] arrayOrigin, int[] colorTable, int[][] indexTable, int w, int h, int colorNum){
         ArrayList<Color> colorList = new ArrayList<>();
+
+        //create colorTable based on colorNum
+        colorTable = new int[colorNum * 3];
+
         //populate colorList with the color values in arrayOrigin and record the frequency of them
         for (int i = 0; i < h; i++){
             for (int j = 0; j < 3 * w; j+=3){
@@ -228,7 +232,7 @@ public class IndexedColor {
         return v;
     }
 
-    public static void partitioning(int colorNum, int[][] arrayOrigin){
+    public static void partitioning(int colorNum, int[][] arrayOrigin, int[] colorTable, int[][] indexTable, int h, int w){
         //decide how to partition the color space
         //rCut refers to the number of equal sub-parts we choose to divide the r axis into, same for gCut and bCut
         int rCut = 1;
@@ -282,8 +286,8 @@ public class IndexedColor {
             }
         }
 
-        //update colorNum
-        colorNum = rCut * gCut * bCut;
+        //set actualColorNum
+        int actualColorNum = rCut * gCut * bCut;
 
 //        System.out.println(rCut);
 //        System.out.println(gCut);
@@ -320,6 +324,98 @@ public class IndexedColor {
         }
 
 
+        //populate colorTable
+        int[] rValue = new int[rCut];
+        int[] gValue = new int[gCut];
+        int[] bValue = new int[bCut];
+        int rStep = (rMax - rMin)/rCut;
+        int gStep = (gMax - gMin)/gCut;
+        int bStep = (bMax - bMin)/bCut;
+        int k = 0;
+        //populate the color value for r/g/b in separate arrays
+        for (int i = 0; i < rMax; i += rStep + 1){
+            if (k != rCut - 1){
+                rValue[k] = (i + i + rStep)/2;
+                k++;
+            }
+            else{
+                rValue[k] = (i + rMax)/2;
+            }
+        }
+        k = 0;
+        for (int i = 0; i < gMax; i += gStep + 1){
+            if (k != gCut - 1){
+                gValue[k] = (i + i + gStep)/2;
+                k++;
+            }
+            else{
+                gValue[k] = (i + gMax)/2;
+            }
+        }
+        for (int i = 0; i < bMax; i += bStep + 1){
+            if (k != bCut - 1){
+                bValue[k] = (i + i + bStep)/2;
+                k++;
+            }
+            else{
+                bValue[k] = (i + bMax)/2;
+            }
+        }
+//        for (int i = 0; i < rValue.length; i++){
+//            System.out.println(rValue[i]);
+//        }
+        //populate colorTable
+        k = 0;
+        for (int i = 0; i < rCut; i++){
+            for (int j = 0; j < gCut; j++){
+                for (int v = 0; v < bCut; v++){
+                    colorTable[k] = rValue[i];
+                    k++;
+                    colorTable[k] = gValue[j];
+                    k++;
+                    colorTable[k] = bValue[v];
+                    k++;
+                }
+            }
+        }
+
+
+        //populate indexTable
+        for (int i = 0; i < h; i++){
+            for (int j = 0; j < w; j++){
+                //get pixel value
+                int rOrigin = arrayOrigin[i][j*3];
+                int gOrigin = arrayOrigin[i][j*3+1];
+                int bOrigin = arrayOrigin[i][j*3+2];
+                //search for the sub-block this pixel is located in
+                int target = 0;
+                int navigate = 0;
+                boolean breakLoop = false;
+                for (int x = rStep + 1; x < rMax; x += rStep + 1){
+                    for (int y = gStep + 1; y < gMax; y += gStep + 1){
+                        for (int z = bStep + 1; z < bMax; z += bStep + 1){
+                            if (rOrigin <= x && gOrigin <= y && bOrigin <= z){
+                                target = navigate;
+                                breakLoop = true;
+                            }
+                            else{
+                                navigate += 3;
+                            }
+                            if (breakLoop){
+                                break;
+                            }
+                        }
+                        if (breakLoop){
+                            break;
+                        }
+                    }
+                    if (breakLoop){
+                        break;
+                    }
+                }
+                indexTable[i][j] = target;
+            }
+        }
 
     }
 }
