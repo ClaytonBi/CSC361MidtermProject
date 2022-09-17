@@ -127,7 +127,7 @@ public class IndexedColor {
         //read file
         InputStream is = null;
         try{
-            is = new FileInputStream("Addie.raw");
+            is = new FileInputStream("Ian.raw");
             // create data input stream
         }
         catch (FileNotFoundException e){
