@@ -69,8 +69,10 @@ public class IndexedColor {
         int[][] arrayOrigin = getArrayOrigin(w, h);
 
 
+
         //prompt number of color for the color table
         int colorNum = 0;
+        int exp = 0;
         loopVar = true;
         System.out.print("Please enter the number of color you want for the new image: ");
         while (loopVar){
@@ -93,7 +95,8 @@ public class IndexedColor {
         int[] colorTable = new int[colorNum * 3];
         int[][] indexTable = new int[h][w];
 
-        popularity(arrayOrigin, colorTable, indexTable, w, h, colorNum);
+//        popularity(arrayOrigin, colorTable, indexTable, w, h, colorNum);
+        partitioning(colorNum, arrayOrigin);
 
 
     }
@@ -216,5 +219,107 @@ public class IndexedColor {
             }
         }
         System.out.println("indexTable populated");
+    }
+
+    //this method calculates variance
+    public static double variance(int x, int y, int z){
+        double mean = (x + y + z)/3.0;
+        double v = Math.pow(x - mean, 2) + Math.pow(y - mean, 2) + Math.pow(z - mean, 2);
+        return v;
+    }
+
+    public static void partitioning(int colorNum, int[][] arrayOrigin){
+        //decide how to partition the color space
+        //rCut refers to the number of equal sub-parts we choose to divide the r axis into, same for gCut and bCut
+        int rCut = 1;
+        int gCut = 1;
+        int bCut = 1;
+        //construct a 5*5*5 array called splitOpt, with each axis corresponding to r/g/b axis in color space; for each axis,
+        //index x refers to cutting the corresponding axis in color space into 2^x even slices; each position in splitOpt contains
+        //the option of total number of blocks after partition
+        int[][][] splitOpt = new int[5][5][5];
+        //populate 3d array
+        for (int i = 0; i < 5; i++){
+            for (int j = 0; j < 5; j++){
+                for (int v = 0; v < 5; v++){
+                    splitOpt[i][j][v] = (int)Math.round(Math.pow(2,i) * Math.pow(2,j) * Math.pow(2,v));
+                }
+            }
+        }
+        //traverse through the 3d array and find the most suitable partition for colorNum
+        //requirement: the number of blocks after partition should be as close as it can to colorNum; it should be below
+        //or equal to color num; the variance of the three slices of each axis should be as small as possible
+        int diff = (int)Math.round(Math.pow(2,4) * Math.pow(2,4) * Math.pow(2,4));
+        double var = 16.0 * 3;
+        for (int i = 0; i < 5; i++){
+            for (int j = 0; j < 5; j++){
+                for (int v = 0; v < 5; v++){
+                    if (colorNum >= splitOpt[i][j][v]){
+                        boolean change = false;
+                        //if the new difference is smaller than the previous difference, update cutting strategy
+                        if (colorNum - splitOpt[i][j][v] < diff){
+                            change = true;
+                        }
+                        //if the new difference is equal to the previous difference, the slicing numbers of three axis with
+                        //smaller variance are prioritized
+                        else if (colorNum - splitOpt[i][j][v] == diff){
+                            if (var - variance(i, j, v) > 0.0001){
+                                change = true;
+                            }
+                        }
+                        if (change){
+//                            System.out.println("SWITCH!"+i+j+v+splitOpt[i][j][v] + " "+colorNum);
+                            diff = colorNum - splitOpt[i][j][v];
+//                            System.out.println(diff);
+                            var = variance(i, j, v);
+//                            System.out.println(var);
+                            rCut = (int)Math.round(Math.pow(2,i));
+                            gCut = (int)Math.round(Math.pow(2,j));
+                            bCut = (int)Math.round(Math.pow(2,v));
+                        }
+                    }
+                }
+            }
+        }
+
+        //update colorNum
+        colorNum = rCut * gCut * bCut;
+
+//        System.out.println(rCut);
+//        System.out.println(gCut);
+//        System.out.println(bCut);
+
+        //determine the subspace containing the existing colors
+        int rMin = 255;
+        int rMax = 0;
+        int gMin = 255;
+        int gMax = 0;
+        int bMin = 255;
+        int bMax = 0;
+        for (int i = 0; i < arrayOrigin.length; i++){
+            for (int j = 0; j < arrayOrigin[0].length; j+=3){
+                if (arrayOrigin[i][j] < rMin){
+                    rMin = arrayOrigin[i][j];
+                }
+                if (arrayOrigin[i][j] > rMax){
+                    rMax = arrayOrigin[i][j];
+                }
+                if (arrayOrigin[i][j+1] < gMin){
+                    gMin = arrayOrigin[i][j+1];
+                }
+                if (arrayOrigin[i][j+1] > gMax){
+                    gMax = arrayOrigin[i][j+1];
+                }
+                if (arrayOrigin[i][j+2] < bMin){
+                    bMin = arrayOrigin[i][j+2];
+                }
+                if (arrayOrigin[i][j+2] > bMax){
+                    bMax = arrayOrigin[i][j+2];
+                }
+            }
+        }
+
+
+
     }
 }
