@@ -95,9 +95,29 @@ public class IndexedColor {
         int[] colorTable = new int[colorNum * 3];
         int[][] indexTable = new int[h][w];
 
-//        popularity(arrayOrigin, colorTable, indexTable, w, h, colorNum);
-        partitioning(colorNum, arrayOrigin, colorTable, indexTable, h, w);
 
+        //run algorithm
+        if (algorithm.equals("p")){
+            popularity(arrayOrigin, colorTable, indexTable, w, h, colorNum);
+        }
+        else{
+            partitioning(colorNum, arrayOrigin, colorTable, indexTable, h, w);
+        }
+
+
+//        //print colorTable
+//        for (int i = 0; i < colorTable.length; i++){
+//            System.out.print(colorTable[i] + " ");
+//        }
+//        System.out.println();
+//        System.out.println();
+//        //print indexTable
+//        for (int i = 0; i < indexTable.length; i++){
+//            for (int j = 0; j < indexTable[0].length; j++){
+//                System.out.print(indexTable[i][j]+" ");
+//            }
+//            System.out.println();
+//        }
 
     }
 
@@ -286,8 +306,7 @@ public class IndexedColor {
             }
         }
 
-        //set actualColorNum
-        int actualColorNum = rCut * gCut * bCut;
+        System.out.println("Partitioning method choice: r slice * " + rCut + ", g slice * " + gCut + ", b slice * " + bCut);
 
 //        System.out.println(rCut);
 //        System.out.println(gCut);
@@ -323,6 +342,7 @@ public class IndexedColor {
             }
         }
 
+        System.out.println("Sub-space of existing colors determined");
 
         //populate colorTable
         int[] rValue = new int[rCut];
@@ -379,6 +399,7 @@ public class IndexedColor {
             }
         }
 
+        System.out.println("colorTable populated");
 
         //populate indexTable
         for (int i = 0; i < h; i++){
@@ -387,35 +408,33 @@ public class IndexedColor {
                 int rOrigin = arrayOrigin[i][j*3];
                 int gOrigin = arrayOrigin[i][j*3+1];
                 int bOrigin = arrayOrigin[i][j*3+2];
+//                System.out.println(rOrigin+" "+gOrigin+" "+bOrigin);
                 //search for the sub-block this pixel is located in
                 int target = 0;
                 int navigate = 0;
-                boolean breakLoop = false;
-                for (int x = rStep + 1; x < rMax; x += rStep + 1){
-                    for (int y = gStep + 1; y < gMax; y += gStep + 1){
-                        for (int z = bStep + 1; z < bMax; z += bStep + 1){
-                            if (rOrigin <= x && gOrigin <= y && bOrigin <= z){
+                for (int x = rMin; x < rMax; x += rStep + 1){
+                    for (int y = gMin; y < gMax; y += gStep + 1){
+                        for (int z = bMin; z < bMax; z += bStep + 1){
+                            if ((rOrigin >= x) && (rOrigin <= x + rStep) &&
+                                    (gOrigin >= y) && (gOrigin <= y + gStep) &&
+                                    (bOrigin >= z) && (bOrigin <= z + bStep)){
                                 target = navigate;
-                                breakLoop = true;
+//                                System.out.println("Found!");
+//                                System.out.println(x+" "+rOrigin+" "+(x+rStep));
+//                                System.out.println(y+" "+gOrigin+" "+(y+gStep));
+//                                System.out.println(z+" "+bOrigin+" "+(z+bStep));
+//                                System.out.println("target = " + target);
                             }
                             else{
                                 navigate += 3;
                             }
-                            if (breakLoop){
-                                break;
-                            }
                         }
-                        if (breakLoop){
-                            break;
-                        }
-                    }
-                    if (breakLoop){
-                        break;
                     }
                 }
                 indexTable[i][j] = target;
             }
         }
+        System.out.println("indexTable populated");
 
     }
 }
