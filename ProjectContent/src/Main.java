@@ -1,9 +1,22 @@
+/**
+ * The program will read the data from a raw image, use either popularity or uniform partitioning to transform the image
+ * into index color, and store the new data into a uncompressed bmp file. The image to choose, the file name to print,
+ * and the index color algorithm to deploy will be determined by user input.
+ *
+ * @author Clayton Bi {bic20@wfu.edu}
+ * @date Sept. 28, 2022
+ * @assignment Midterm Project
+ * @course CSC 361
+ */
+
 import java.io.*;
 import java.util.*;
 import java.lang.*;
 
-public class IndexedColor {
-    //the color subclass helps popularity method count the color values
+public class Main {
+    /**
+     * the color subclass helps popularity method count the color values
+     */
     public static class Color{
         int r;
         int g;
@@ -21,6 +34,7 @@ public class IndexedColor {
     public static void main(String args[]){
         String fileName;
         String algorithm;
+        String printFileName;
         int w = 0;
         int h = 0;
         boolean loopVar = true;
@@ -28,8 +42,13 @@ public class IndexedColor {
 
 
         //read file name from user
-        System.out.print("Please provide the file name: ");
+        System.out.print("Please provide the file name (a for Addie.raw, i for Ian.raw): ");
         fileName = keyboard.next();
+        //ask the user to reenter if input is not valid
+        while ((!fileName.equals("a")) && (!fileName.equals("i"))){
+            System.out.print("Please enter a or i: ");
+            fileName = keyboard.next();
+        }
 
         //read algorithm to be used from user
         System.out.print("Please select algorithm (p for popularity, u for uniform partitioning): ");
@@ -38,6 +57,26 @@ public class IndexedColor {
         while ((!algorithm.equals("u")) && (!algorithm.equals("p"))){
             System.out.print("Please enter p or u: ");
             algorithm = keyboard.next();
+        }
+
+        //determine the print file name
+        if (fileName.equals("a")){
+            fileName = "Addie.raw";
+            if (algorithm.equals("p")){
+                printFileName = "AddiePopularity.bmp";
+            }
+            else{
+                printFileName = "AddieUniformPartitioning.bmp";
+            }
+        }
+        else{
+            fileName = "Ian.raw";
+            if (algorithm.equals("p")){
+                printFileName = "IanPopularity.bmp";
+            }
+            else{
+                printFileName = "IanUniformPartitioning.bmp";
+            }
         }
 
         //read width
@@ -66,7 +105,7 @@ public class IndexedColor {
         loopVar = true;
 
 
-        int[][] arrayOrigin = getArrayOrigin(w, h);
+        int[][] arrayOrigin = getArrayOrigin(w, h, fileName);
 
 
 
@@ -119,15 +158,23 @@ public class IndexedColor {
 //            System.out.println();
 //        }
 
+        //write data into bmp
+        writeFile(printFileName, colorTable, indexTable);
     }
 
-    public static int[][] getArrayOrigin(int w, int h){
+    /**
+     * Read the file and insert the pixel data into an array
+     * @param w width of the image file
+     * @param h height of the image file
+     * @return The constructed 2d array of pixel data
+     */
+    public static int[][] getArrayOrigin(int w, int h, String fileName){
         int[][] target = new int[h][3*w];
 
         //read file
         InputStream is = null;
         try{
-            is = new FileInputStream("Ian.raw");
+            is = new FileInputStream(fileName);
             // create data input stream
         }
         catch (FileNotFoundException e){
@@ -159,6 +206,17 @@ public class IndexedColor {
     //method that makes sure for popularity method whether the new color has appeared in the list
     //if the color exists in the list, the method will return the index of the already existing color
     //else, the method will return -1
+
+    /**
+     * Method that makes sure for popularity method whether the new color has appeared in the list.
+     * If the color exists in the list, the method will return the index of the already existing color.
+     * Else, the method will return -1
+     * @param list The list to check on
+     * @param r r value
+     * @param g g value
+     * @param b b value
+     * @return the index of the existing color or -1 if color does not exist in list
+     */
     public static int search(ArrayList<Color> list, int r, int g, int b){
         for (int i = 0; i < list.size(); i++){
             if ((list.get(i).r == r) && (list.get(i).g == g) && (list.get(i).b == b)){
@@ -169,6 +227,11 @@ public class IndexedColor {
     }
 
     //this method sorts the Color ArrayList in descending order using selection sort
+
+    /**
+     * Sort array in descending order
+     * @param list the list to sort
+     */
     public static void sortInDescending(ArrayList<Color> list){
         for (int i = 0; i < list.size()-1; i++){
             int indexMax = i;
@@ -181,11 +244,18 @@ public class IndexedColor {
         }
     }
 
+    /**
+     * The popularity algorithm
+     * @param arrayOrigin The array with the original pixel value
+     * @param colorTable The colorTable to construct
+     * @param indexTable The indexTable to construct
+     * @param w The width of the image
+     * @param h The height of the image
+     * @param colorNum The number of colors we want for the colorTable
+     */
     public static void popularity(int[][] arrayOrigin, int[] colorTable, int[][] indexTable, int w, int h, int colorNum){
         ArrayList<Color> colorList = new ArrayList<>();
 
-        //create colorTable based on colorNum
-        colorTable = new int[colorNum * 3];
 
         //populate colorList with the color values in arrayOrigin and record the frequency of them
         for (int i = 0; i < h; i++){
@@ -215,9 +285,9 @@ public class IndexedColor {
             System.exit(-1);
         }
         for (int i = 0; i < colorTable.length; i += 3){
-            colorTable[i] = colorList.get(i).r;
-            colorTable[i+1] = colorList.get(i).g;
-            colorTable[i+2] = colorList.get(i).b;
+            colorTable[i] = colorList.get(i/3).r;
+            colorTable[i+1] = colorList.get(i/3).g;
+            colorTable[i+2] = colorList.get(i/3).b;
         }
         System.out.println("colorTable populated");
 
@@ -245,13 +315,28 @@ public class IndexedColor {
         System.out.println("indexTable populated");
     }
 
-    //this method calculates variance
+    /**
+     * This method calculates variance
+     * @param x
+     * @param y
+     * @param z
+     * @return the variance
+     */
     public static double variance(int x, int y, int z){
         double mean = (x + y + z)/3.0;
         double v = Math.pow(x - mean, 2) + Math.pow(y - mean, 2) + Math.pow(z - mean, 2);
         return v;
     }
 
+    /**
+     * Uniform partitioning algorithm
+     * @param colorNum The number of colors we want for the colorTable
+     * @param arrayOrigin The array with the original pixel value
+     * @param colorTable The colorTable to construct
+     * @param indexTable The indexTable to construct
+     * @param h The height of the image
+     * @param w The width of the image
+     */
     public static void partitioning(int colorNum, int[][] arrayOrigin, int[] colorTable, int[][] indexTable, int h, int w){
         //decide how to partition the color space
         //rCut refers to the number of equal sub-parts we choose to divide the r axis into, same for gCut and bCut
@@ -436,5 +521,186 @@ public class IndexedColor {
         }
         System.out.println("indexTable populated");
 
+    }
+
+    /**
+     * Write the new index color data into a bmp file
+     * @param printFileName The file name to write in
+     * @param colorTable
+     * @param indexTable
+     */
+    public static void writeFile(String printFileName, int[] colorTable, int[][] indexTable){
+        final int BITMAPFILEHEADER_SIZE = 14;
+        final int BITMAPINFOHEADER_SIZE = 40;
+        //file header
+        byte bfType [] = {'B', 'M'};//set
+        int bfSize = 0;//size of the whole file in bytes
+        int bfReserved1 = 0;//set
+        int bfReserved2 = 0;//set
+        int bfOffBits = BITMAPFILEHEADER_SIZE + BITMAPINFOHEADER_SIZE;//heqder + 4*numColors
+        //info header
+        int biSize = BITMAPINFOHEADER_SIZE;//set
+        int biWidth = 0;//width of the bitmap in pixels
+        int biHeight = 0;//height of the bitmap in pixels
+        int biPlanes = 1;//set
+        int biBitCount = 8;//set
+        int biCompression = 0;//set
+        int biSizeImage = 0;//size in bytes of the image, can set to 0 if bitmap is in RI_RGB format
+        int biXPelsPerMeter = 300;//horizontal resolution
+        int biYPelsPerMeter = 300;//vertical resolution
+        int biClrUsed = 0;//the number of color indices in color table actually used by the bitmap
+        int biClrImportant = 0;//set
+        //bit map raw data
+        int bitmap [];
+        //--- File section
+        FileOutputStream myFile = null;
+
+        int colorTableLength = colorTable.length;
+        int width = indexTable[0].length;
+        int height = indexTable.length;
+
+//        //print width and height
+//        System.out.println(width + " " + height);
+//        //print colorTable
+//        for (int i = 0; i < colorTable.length; i++){
+//            System.out.print(colorTable[i] + " ");
+//        }
+//        System.out.println();
+//        System.out.println();
+//        //print indexTable
+//        for (int i = 0; i < indexTable.length; i++){
+//            for (int j = 0; j < indexTable[0].length; j++){
+//                System.out.print(indexTable[i][j]+" ");
+//            }
+//            System.out.println();
+//        }
+
+
+        try{
+            myFile = new FileOutputStream (printFileName);
+
+        }
+        catch (Exception saveEx) {
+            System.out.println("Can't open file to write.");
+            System.exit(-1);
+        }
+
+        //construct bitmap in bmp format
+        bitmap = new int[width * height];
+        biSizeImage = width * height;
+        bfOffBits += (colorTableLength/3) * 4;
+        bfSize = biSizeImage + bfOffBits;
+        biWidth = width;
+        biHeight = height;
+        biClrUsed = 256;
+
+        int k = 0;
+        for (int i = height - 1; i >= 0; i--){
+            for (int j = 0; j < width; j++){
+                bitmap[k] = indexTable[i][j]/3;
+                k++;
+            }
+        }
+
+//        //print bitmap
+//        for (int q = 0; q < bitmap.length; q++){
+//            System.out.print(bitmap[q]);
+//        }
+
+
+        //write bitmap file header
+        try{
+            myFile.write (bfType);
+            myFile.write (intToDWord (bfSize));
+            myFile.write (intToWord (bfReserved1));
+            myFile.write (intToWord (bfReserved2));
+            myFile.write (intToDWord (bfOffBits));
+            System.out.println("Bit File Header complete");
+        }
+        catch (Exception wbfh) {
+            System.out.println("Write bit file header fail.");
+            System.exit(-1);
+        }
+
+        //write bitmap file info header
+        try {
+            myFile.write (intToDWord (biSize));
+            myFile.write (intToDWord (biWidth));
+            myFile.write (intToDWord (biHeight));
+            myFile.write (intToWord (biPlanes));
+            myFile.write (intToWord (biBitCount));
+            myFile.write (intToDWord (biCompression));
+            myFile.write (intToDWord (biSizeImage));
+            myFile.write (intToDWord (biXPelsPerMeter));
+            myFile.write (intToDWord (biYPelsPerMeter));
+            myFile.write (intToDWord (biClrUsed));
+            myFile.write (intToDWord (biClrImportant));
+            System.out.println("Bit File Info Header complete");
+        }
+        catch (Exception wbih) {
+            System.out.println("Write bit file info header fail.");
+            System.exit(-1);
+        }
+
+        //write color table
+        for (int i = 0; i < colorTable.length; i+=3){
+            try{
+                myFile.write((byte)(colorTable[i+2] & 0xFF));
+                myFile.write((byte)(colorTable[i+1] & 0xFF));
+                myFile.write((byte)(colorTable[i] & 0xFF));
+                myFile.write(0x00);
+            }
+            catch(Exception wb){
+                System.out.println("Write color table fail.");
+                System.exit(-1);
+            }
+        }
+        System.out.println("Color Table complete");
+        //write bitmap
+        for (int i = 0; i < bitmap.length; i++){
+            try{
+                myFile.write((byte)(bitmap[i] & 0xFF));
+            }
+            catch(Exception wb){
+                System.out.println("Write bitmap fail.");
+                System.exit(-1);
+            }
+        }
+        System.out.println("Index Table complete");
+
+        try{
+            myFile.close();
+        }
+        catch(Exception e){
+            System.out.println("Can't close file");
+            System.exit(-1);
+        }
+        System.out.println(printFileName + " is constructed.");
+    }
+
+    /**
+     * converts an integer into a word stored in 2-byte array
+     * @param parValue
+     * @return the 2-byte array
+     */
+    public static byte [] intToWord (int parValue) {
+        byte value [] = new byte [2];
+        value [0] = (byte) (parValue & 0x00FF);
+        value [1] = (byte) ((parValue >>  8) & 0x00FF);
+        return (value);
+    }
+
+    /**
+     * converts an integer into a double word stored in 4-byte array
+     * @param parValue
+     * @return the 4-byte array
+     */
+    public static byte [] intToDWord (int parValue) {
+        byte value [] = new byte [4];
+        value [0] = (byte) (parValue & 0x00FF);
+        value [1] = (byte) ((parValue >>  8) & 0x000000FF);
+        value [2] = (byte) ((parValue >>  16) & 0x000000FF);
+        value [3] = (byte) ((parValue >>  24) & 0x000000FF);
+        return (value);
     }
 }
