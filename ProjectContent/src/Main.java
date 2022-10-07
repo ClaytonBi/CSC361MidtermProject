@@ -117,11 +117,11 @@ public class Main {
         while (loopVar){
             try{
                 colorNum = Integer.parseInt(keyboard.next());
-                loopVar = false;
                 if ((colorNum < 1) || (colorNum > 256)){
-                    System.out.println("The number must be within [1,256]");
+                    System.out.print("The number must be within [1,256]: ");
                     continue;
                 }
+                loopVar = false;
             }
             catch(NumberFormatException ee){
                 System.out.print("Please enter valid number: ");
@@ -457,6 +457,7 @@ public class Main {
                 gValue[k] = (i + gMax)/2;
             }
         }
+        k = 0;
         for (int i = 0; i < bMax; i += bStep + 1){
             if (k != bCut - 1){
                 bValue[k] = (i + i + bStep)/2;
